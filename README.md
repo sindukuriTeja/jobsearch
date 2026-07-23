@@ -194,3 +194,54 @@ For issues, questions, or suggestions, please open an issue on GitHub.
 
 **Built with ❤️ for job seekers everywhere**
 # job-search
+
+## Deployment & CORS notes
+
+This repository includes a small serverless proxy at `api/proxy.js` (Vercel compatible). Browser-hosted static sites (GitHub Pages) are blocked by CORS when fetching many job sites. To make the hosted site work reliably:
+
+- Deploy the `api/` function to Vercel (or Netlify). After deploying, set `window.PROXY_URL` in `index.html` to the deployed function URL, for example:
+
+```html
+<script>window.PROXY_URL = 'https://your-project.vercel.app/api/proxy';</script>
+```
+
+- The client will then use your proxy for blocked fetches and the responses will include CORS headers.
+
+### Setting LinkedIn guest key (secure)
+
+If you have a LinkedIn guest key and want the proxy to use it (recommended so the key is not exposed in client JS), set these environment variables in Vercel (or your hosting provider):
+
+- `LINKEDIN_GUEST_KEY` — the key value
+- `LINKEDIN_GUEST_HEADER` — optional header name to send the key in (default: `x-api-key`)
+- `LINKEDIN_GUEST_QUERY_PARAM` — optional: instead of a header, set this to a query parameter name (e.g. `guest_key`) and the proxy will append it to LinkedIn requests.
+
+Using the Vercel CLI you can set a production environment variable like this:
+
+```bash
+vercel env add LINKEDIN_GUEST_KEY production
+vercel env add LINKEDIN_GUEST_HEADER production
+vercel env add LINKEDIN_GUEST_QUERY_PARAM production
+```
+
+Or set them in the Vercel dashboard for your project. After deployment the proxy will automatically attach the key to requests targeting `linkedin.com`.
+
+- Alternatively, restrict searches to APIs that support CORS (the `searchJobs` categories already favor `Arbeitnow`, `Remotive`, `Himalayas`, and `WeWorkRemotely`).
+
+Security: tighten `Access-Control-Allow-Origin` in the proxy for production and add rate-limiting.
+
+## Authenticated access to protected job sites
+
+Plans and scaffolding:
+
+- `api/linkedin_oauth.js` — serverless scaffold to start the LinkedIn OAuth flow and exchange the authorization code for an access token. Set these env vars in your deployment: `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET`, `LINKEDIN_REDIRECT_URI`.
+
+- `api/scraper_worker.js` — placeholder for a Puppeteer-based authenticated scraper. It accepts a POST body `{ site, username, password, query }` and should perform site-specific login and search steps. Note: running Puppeteer in serverless requires special Chromium binaries or a dedicated Docker host.
+
+Security & legal:
+- Do not save user credentials without explicit consent; prefer ephemeral sessions and delete credentials after use.
+- Respect each site's Terms of Service. Scraping authenticated pages may be disallowed.
+
+Recommended next steps:
+1. Deploy the proxy to Vercel for unauthenticated CORS handling.
+2. For protected platforms, implement OAuth where available (LinkedIn). Use `api/linkedin_oauth.js` scaffold.
+3. For sites without APIs, implement `api/scraper_worker.js` on a server capable of running headless Chromium (Docker) and secure credential handling.
