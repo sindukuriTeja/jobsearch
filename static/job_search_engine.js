@@ -585,19 +585,19 @@ async function searchJobs(searchParams) {
     const platformsSearched = [];
     const failedPlatforms = [];
 
-    // Map categories to search functions
+    // Map categories to search functions using only CORS-friendly or public API sources
     const categoryFns = {
-        india:         [searchLinkedIn, searchFreshersworld, searchInternshala, searchArbeitnow, searchRemotive, searchIndeed],
-        software:      [searchLinkedIn, searchRemoteOK, searchArbeitnow, searchRemotive, searchIndeed],
-        ai_ml:         [searchLinkedIn, searchAIJobs, searchRemoteOK, searchRemotive, searchIndeed],
-        remote:        [searchLinkedIn, searchRemoteOK, searchWeWorkRemotely, searchRemotive, searchArbeitnow],
-        international: [searchLinkedIn, searchArbeitnow, searchRemotive, searchIndeed],
-        internships:   [searchInternshala, searchLinkedIn, searchRemotive, searchIndeed],
-        freelancing:   [searchRemoteOK, searchWeWorkRemotely, searchRemotive],
-        startups:      [searchLinkedIn, searchRemoteOK, searchArbeitnow, searchRemotive],
-        companies:     [searchLinkedIn, searchArbeitnow, searchRemotive, searchIndeed],
-        offcampus:     [searchLinkedIn, searchFreshersworld, searchInternshala, searchArbeitnow, searchIndeed],
-        government:    [searchArbeitnow],
+        india:         [searchArbeitnow, searchRemotive, searchHimalayas],
+        software:      [searchArbeitnow, searchRemotive, searchHimalayas],
+        ai_ml:         [searchRemotive, searchHimalayas],
+        remote:        [searchArbeitnow, searchRemotive, searchHimalayas, searchWeWorkRemotely],
+        international: [searchArbeitnow, searchRemotive, searchHimalayas],
+        internships:   [searchRemotive, searchArbeitnow],
+        freelancing:   [searchRemotive, searchWeWorkRemotely],
+        startups:      [searchRemotive, searchArbeitnow],
+        companies:     [searchRemotive, searchArbeitnow],
+        offcampus:     [searchRemotive, searchArbeitnow],
+        government:    [searchArbeitnow, searchRemotive],
     };
 
     // Deduplicate search functions across categories

@@ -1032,7 +1032,8 @@
             displayJobListings(result.jobs);
 
             // Show direct platform links
-            loadPlatformLinks(result.search_query);
+            const location = document.getElementById('location').value.trim();
+            loadPlatformLinks(result.search_query, location, Array.from(selectedCategories));
 
             // Scroll to results
             resultsSection.scrollIntoView({ behavior: 'smooth' });
