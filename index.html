@@ -728,6 +728,94 @@
         let resumeData = null;
         let selectedCategories = new Set(['india', 'software']);
 
+        const PLATFORM_LINKS_BY_CATEGORY = {
+            india: [
+                { name: 'LinkedIn', url: 'https://www.linkedin.com/jobs/search/?keywords={q}&location={loc}' },
+                { name: 'Indeed India', url: 'https://www.indeed.co.in/jobs?q={q}&l={loc}' },
+                { name: 'Naukri', url: 'https://www.naukri.com/{slug}-jobs{locPath}' },
+                { name: 'Shine', url: 'https://www.shine.com/job-search/{q}-jobs{locPath}' },
+            ],
+            software: [
+                { name: 'LinkedIn', url: 'https://www.linkedin.com/jobs/search/?keywords={q}&location={loc}' },
+                { name: 'Indeed', url: 'https://www.indeed.com/jobs?q={q}&l={loc}' },
+                { name: 'Glassdoor', url: 'https://www.glassdoor.com/Job/jobs.htm?sc.keyword={q}&locT=C&locId=0&locKeyword={loc}' },
+                { name: 'Remote OK', url: 'https://remoteok.com/remote-{slug}' },
+            ],
+            ai_ml: [
+                { name: 'LinkedIn', url: 'https://www.linkedin.com/jobs/search/?keywords={q}&location={loc}' },
+                { name: 'Indeed', url: 'https://www.indeed.com/jobs?q={q}&l={loc}' },
+                { name: 'Kaggle Jobs', url: 'https://www.kaggle.com/jobs?search={q}' },
+            ],
+            remote: [
+                { name: 'Remote OK', url: 'https://remoteok.com/remote-{slug}' },
+                { name: 'We Work Remotely', url: 'https://weworkremotely.com/remote-jobs/search?term={q}' },
+                { name: 'Remotive', url: 'https://remotive.com/search/remote-{slug}' },
+            ],
+            international: [
+                { name: 'LinkedIn', url: 'https://www.linkedin.com/jobs/search/?keywords={q}&location={loc}' },
+                { name: 'Indeed', url: 'https://www.indeed.com/jobs?q={q}&l={loc}' },
+                { name: 'Glassdoor', url: 'https://www.glassdoor.com/Job/jobs.htm?sc.keyword={q}&locT=C&locId=0&locKeyword={loc}' },
+            ],
+            internships: [
+                { name: 'Internshala', url: 'https://internshala.com/internships/keywords-{q}' },
+                { name: 'LinkedIn', url: 'https://www.linkedin.com/jobs/search/?keywords={q}&location={loc}' },
+                { name: 'Indeed Internships', url: 'https://www.indeed.com/q-{q}-internship-jobs.html' },
+            ],
+            freelancing: [
+                { name: 'Upwork', url: 'https://www.upwork.com/search/jobs/?q={q}' },
+                { name: 'Fiverr', url: 'https://www.fiverr.com/search/gigs?query={q}' },
+                { name: 'Freelancer', url: 'https://www.freelancer.com/jobs/{slug}/' },
+            ],
+            startups: [
+                { name: 'AngelList', url: 'https://angel.co/jobs?keywords={q}&location={loc}' },
+                { name: 'Wellfound', url: 'https://wellfound.com/jobs?search={q}&location={loc}' },
+                { name: 'LinkedIn', url: 'https://www.linkedin.com/jobs/search/?keywords={q}&location={loc}' },
+            ],
+            companies: [
+                { name: 'LinkedIn', url: 'https://www.linkedin.com/jobs/search/?keywords={q}&location={loc}' },
+                { name: 'Indeed', url: 'https://www.indeed.com/jobs?q={q}&l={loc}' },
+                { name: 'Glassdoor', url: 'https://www.glassdoor.com/Job/jobs.htm?sc.keyword={q}&locT=C&locId=0&locKeyword={loc}' },
+            ],
+            offcampus: [
+                { name: 'LinkedIn', url: 'https://www.linkedin.com/jobs/search/?keywords={q}&location={loc}' },
+                { name: 'Internshala', url: 'https://internshala.com/internships/keywords-{q}' },
+                { name: 'Freshersworld', url: 'https://www.freshersworld.com/jobs/jobsearch/{slug}-jobs' },
+            ],
+            government: [
+                { name: 'Naukri', url: 'https://www.naukri.com/{slug}-jobs' },
+                { name: 'LinkedIn', url: 'https://www.linkedin.com/jobs/search/?keywords={q}&location={loc}' },
+                { name: 'Indeed', url: 'https://www.indeed.com/jobs?q={q}&l={loc}' },
+            ],
+        };
+
+        function buildPlatformLinkUrl(template, query, location) {
+            const q = encodeURIComponent(query);
+            const loc = encodeURIComponent(location || '');
+            const slug = encodeURIComponent(query.toLowerCase().replace(/\s+/g, '-'));
+            const locPath = location ? `/${encodeURIComponent(location.replace(/\s+/g, '-'))}` : '';
+            return template
+                .replace(/{q}/g, q)
+                .replace(/{loc}/g, loc)
+                .replace(/{slug}/g, slug)
+                .replace(/{locPath}/g, locPath);
+        }
+
+        function getPlatformLinksForCategory(category, query, location) {
+            const templates = PLATFORM_LINKS_BY_CATEGORY[category] || [];
+            return templates.map(template => ({
+                name: template.name,
+                url: buildPlatformLinkUrl(template.url, query, location),
+            }));
+        }
+
+        function buildPlatformLinks(query, location, categories) {
+            const links = {};
+            categories.forEach(category => {
+                links[category] = getPlatformLinksForCategory(category, query, location);
+            });
+            return links;
+        }
+
         // ---- Initialize ----
         document.addEventListener('DOMContentLoaded', () => {
             populateCategories();
@@ -893,6 +981,7 @@
                         },
                         search_query: searchParams.skills.slice(0, 3).join(', '),
                     });
+                    loadPlatformLinks(searchParams.skills.slice(0, 3).join(', '), location, Array.from(selectedCategories));
                 }, 500);
 
             } catch (err) {
@@ -1054,15 +1143,9 @@
         }
 
         // ---- Direct platform links ----------------------------------
-        async function loadPlatformLinks(query) {
-            try {
-                const resp = await fetch('/platform-links?query=' + encodeURIComponent(query));
-                if (!resp.ok) return;
-                const data = await resp.json();
-                renderPlatformLinks(data.platforms, data.query);
-            } catch(e) {
-                console.error('Platform links error:', e);
-            }
+        function loadPlatformLinks(query, location, categories) {
+            const platforms = buildPlatformLinks(query, location, categories);
+            renderPlatformLinks(platforms, query);
         }
 
         function renderPlatformLinks(platforms, query) {
