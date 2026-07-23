@@ -5,8 +5,6 @@
  */
 
 const HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Accept-Language': 'en-US,en;q=0.9',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
 };
 
@@ -73,7 +71,7 @@ async function searchLinkedIn(query, location) {
 
     for (const url of endpoints) {
         try {
-            const resp = await fetch(url, { headers: HEADERS, signal: AbortSignal.timeout(15000) });
+            const resp = await fetchWithCors(url, { headers: HEADERS, signal: AbortSignal.timeout(15000) });
             if (resp.status !== 200) continue;
             const html = await resp.text();
             const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -123,7 +121,7 @@ async function searchFreshersworld(query, location) {
         const slug = encodeURIComponent(query.replace(/ /g, '-'));
         for (let page = 1; page <= 2; page++) {
             const url = `https://www.freshersworld.com/jobs/jobsearch/${slug}-jobs?page=${page}`;
-            const resp = await fetch(url, { headers: HEADERS, signal: AbortSignal.timeout(15000) });
+            const resp = await fetchWithCors(url, { signal: AbortSignal.timeout(15000) });
             if (resp.status !== 200) break;
             const html = await resp.text();
             const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -172,7 +170,7 @@ async function searchInternshala(query, location) {
         const slug = encodeURIComponent(query.replace(/ /g, '-'));
         for (let page = 1; page <= 2; page++) {
             const url = `https://internshala.com/jobs/keyword-${slug}/page-${page}/`;
-            const resp = await fetch(url, { headers: HEADERS, signal: AbortSignal.timeout(15000) });
+            const resp = await fetchWithCors(url, { signal: AbortSignal.timeout(15000) });
             if (resp.status !== 200) break;
             const html = await resp.text();
             const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -218,7 +216,7 @@ async function searchShine(query, location) {
         const q = encodeURIComponent(query);
         const loc = encodeURIComponent(location || '');
         const url = `https://www.shine.com/job-search/${q}-jobs${loc ? '/' + loc : ''}`;
-        const resp = await fetch(url, { headers: HEADERS, signal: AbortSignal.timeout(15000) });
+        const resp = await fetchWithCors(url, { signal: AbortSignal.timeout(15000) });
         if (resp.status !== 200) return { platform: 'Shine', jobs: [], error: 'Blocked' };
         const html = await resp.text();
         const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -259,7 +257,7 @@ async function searchArbeitnow(query, location) {
         const q = encodeURIComponent(query);
         for (let page = 1; page <= 3; page++) {
             const url = `https://www.arbeitnow.com/api/job-board-api?search=${q}&page=${page}`;
-            const resp = await fetch(url, { headers: HEADERS, signal: AbortSignal.timeout(15000) });
+            const resp = await fetchWithCors(url, { headers: HEADERS, signal: AbortSignal.timeout(15000) });
             if (!resp.ok) break;
             const data = await resp.json();
             const items = data.data || [];
@@ -293,8 +291,8 @@ async function searchRemoteOK(query, location) {
     const jobs = [];
     try {
         const q = encodeURIComponent(query);
-        const resp = await fetch(`https://remoteok.com/remote-software-dev-jobs?page=1&search=${q}`, {
-            headers: { ...HEADERS, Accept: 'application/json' },
+        const resp = await fetchWithCors(`https://remoteok.com/remote-software-dev-jobs?page=1&search=${q}`, {
+            headers: { Accept: 'application/json' },
             signal: AbortSignal.timeout(15000),
         });
         if (!resp.ok) return { platform: 'RemoteOK', jobs: [], error: 'Blocked' };
@@ -329,7 +327,7 @@ async function searchRemotive(query, location) {
         const categories = ['software-dev', 'marketing', 'sales', 'design', 'customer-support', 'data-science', 'devops-sre'];
         for (const cat of categories) {
             const url = `https://remotive.com/api/remote-jobs?category=${cat}&search=${q}&limit=20`;
-            const resp = await fetch(url, { headers: HEADERS, signal: AbortSignal.timeout(15000) });
+            const resp = await fetchWithCors(url, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(15000) });
             if (!resp.ok) continue;
             const data = await resp.json();
             for (const item of (data.jobs || []).slice(0, 20)) {
@@ -361,8 +359,8 @@ async function searchHimalayas(query, location) {
     const jobs = [];
     try {
         const q = encodeURIComponent(query);
-        const resp = await fetch(`https://himalayas.app/api/v1/jobs?q=${q}`, {
-            headers: HEADERS,
+        const resp = await fetchWithCors(`https://himalayas.app/api/v1/jobs?q=${q}`, {
+            headers: { Accept: 'application/json' },
             signal: AbortSignal.timeout(15000),
         });
         if (!resp.ok) return { platform: 'Himalayas', jobs: [], error: 'Blocked' };
@@ -401,8 +399,7 @@ async function searchWeWorkRemotely(query, location) {
 
     try {
         for (const feedUrl of feeds) {
-            const resp = await fetch(feedUrl, { headers: HEADERS, signal: AbortSignal.timeout(15000) });
-            if (!resp.ok) continue;
+            const resp = await fetchWithCors(feedUrl, { signal: AbortSignal.timeout(15000) });
             const xml = await resp.text();
             const doc = new DOMParser().parseFromString(xml, 'text/xml');
 
@@ -448,8 +445,7 @@ async function searchIndeed(query, location) {
         const q = encodeURIComponent(query);
         const loc = encodeURIComponent(location || '');
         const url = `https://in.indeed.com/jobs?q=${q}&l=${loc}`;
-        const resp = await fetch(url, { headers: HEADERS, signal: AbortSignal.timeout(15000) });
-        if (!resp.ok) return { platform: 'Indeed', jobs: [], error: 'Blocked' };
+        const resp = await fetchWithCors(url, { signal: AbortSignal.timeout(15000) });
         const html = await resp.text();
         const doc = new DOMParser().parseFromString(html, 'text/html');
 
@@ -489,9 +485,9 @@ async function searchJooble(query, location) {
     if (!JOOBLE_API_KEY) return { platform: 'Jooble', jobs: [], error: 'No API key' };
     const jobs = [];
     try {
-        const resp = await fetch(`https://jooble.org/api/${JOOBLE_API_KEY}`, {
+        const resp = await fetchWithCors(`https://jooble.org/api/${JOOBLE_API_KEY}`, {
             method: 'POST',
-            headers: { ...HEADERS, 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
             body: JSON.stringify({ keywords: query, location: location }),
             signal: AbortSignal.timeout(15000),
         });
@@ -522,8 +518,8 @@ async function searchAIJobs(query, location) {
     const jobs = [];
     try {
         const q = encodeURIComponent(query);
-        const resp = await fetch(`https://remotive.com/api/remote-jobs?category=software-dev&search=${q}&limit=20`, {
-            headers: HEADERS,
+        const resp = await fetchWithCors(`https://remotive.com/api/remote-jobs?category=software-dev&search=${q}&limit=20`, {
+            headers: { Accept: 'application/json' },
             signal: AbortSignal.timeout(15000),
         });
         if (!resp.ok) return { platform: 'AI Jobs (via Remotive)', jobs: [], error: 'Blocked' };
