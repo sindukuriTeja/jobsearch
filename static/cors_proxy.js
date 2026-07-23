@@ -1,5 +1,11 @@
 function proxyUrl(url) {
     const encoded = encodeURIComponent(url);
+    // Allow a deploy-time or runtime override by setting `window.PROXY_URL` to
+    // a proxy service that accepts `?url=` or a path like `/api/proxy?url=`.
+    if (typeof window !== 'undefined' && window.PROXY_URL) {
+        const base = window.PROXY_URL.replace(/\/?$/, '');
+        return `${base}?url=${encoded}`;
+    }
     return `https://api.allorigins.win/raw?url=${encoded}`;
 }
 
