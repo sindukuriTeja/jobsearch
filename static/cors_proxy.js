@@ -4,19 +4,42 @@ function proxyUrl(url) {
 }
 
 async function fetchWithCors(url, options = {}) {
-    try {
-        const resp = await fetch(url, options);
-        if (resp.ok) return resp;
-    } catch (e) {
-        console.warn('Direct fetch failed:', url, e.message);
-    }
+    // When running on GitHub Pages (or other remote static hosting) prefer the
+    // proxy first to avoid noisy CORS errors in the browser console. Keep
+    // direct fetch as a fallback for localhost/dev environments.
+    const hostname = (typeof window !== 'undefined' && window.location && window.location.hostname) ? window.location.hostname : '';
+    const preferProxy = hostname && hostname.includes('github.io');
 
-    try {
-        const proxy = proxyUrl(url);
-        const resp = await fetch(proxy, options);
-        if (resp.ok) return resp;
-    } catch (e) {
-        console.warn('Proxy fetch failed:', url, e.message);
+    if (preferProxy) {
+        try {
+            const proxy = proxyUrl(url);
+            const resp = await fetch(proxy, options);
+            if (resp.ok) return resp;
+        } catch (e) {
+            console.warn('Proxy fetch failed:', url, e.message);
+        }
+
+        try {
+            const resp = await fetch(url, options);
+            if (resp.ok) return resp;
+        } catch (e) {
+            console.warn('Direct fetch failed:', url, e.message);
+        }
+    } else {
+        try {
+            const resp = await fetch(url, options);
+            if (resp.ok) return resp;
+        } catch (e) {
+            console.warn('Direct fetch failed:', url, e.message);
+        }
+
+        try {
+            const proxy = proxyUrl(url);
+            const resp = await fetch(proxy, options);
+            if (resp.ok) return resp;
+        } catch (e) {
+            console.warn('Proxy fetch failed:', url, e.message);
+        }
     }
 
     throw new Error('Fetch blocked by CORS or failed.');
